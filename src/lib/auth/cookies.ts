@@ -6,6 +6,7 @@ const COOKIE_NAME = process.env.AUTH_COOKIE_NAME || "ufportal_m2_token";
 // For localhost, leave undefined.
 const COOKIE_DOMAIN =
   process.env.NODE_ENV === "production" ? process.env.AUTH_COOKIE_DOMAIN || undefined : undefined;
+const AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 14; // 14 days
 
 export async function getCustomerToken(): Promise<string | null> {
   const store = await cookies();
@@ -21,9 +22,10 @@ export async function setCustomerToken(token: string): Promise<void> {
     sameSite: "lax",
     path: "/",
     domain: COOKIE_DOMAIN,
-
-    // Suggested: 14 days to reduce “random” logouts
-    maxAge: 60 * 60 * 24 * 14,
+    // Set both maxAge and absolute expires to maximize persistence across
+    // browser/PWA implementations when windows are closed/reopened.
+    maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
+    expires: new Date(Date.now() + AUTH_COOKIE_MAX_AGE_SECONDS * 1000),
   });
 }
 
@@ -37,5 +39,6 @@ export async function clearCustomerToken(): Promise<void> {
     path: "/",
     domain: COOKIE_DOMAIN,
     maxAge: 0,
+    expires: new Date(0),
   });
 }
