@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { setCustomerToken } from "@/lib/auth/cookies";
+import {
+  AUTH_COOKIE_MAX_AGE_SECONDS,
+  CUSTOMER_TOKEN_COOKIE_NAME,
+} from "@/lib/auth/cookies";
 import { magentoFetch } from "@/lib/magento/client";
 
 const GENERATE_CUSTOMER_TOKEN = /* GraphQL */ `
@@ -27,8 +30,24 @@ export async function POST(req: Request) {
       null // no bearer needed to login
     );
 
-    await setCustomerToken(data.generateCustomerToken.token);
-    return NextResponse.json({ ok: true });
+    const res = NextResponse.json({ ok: true });
+
+    // Set cookie on the response directly so persistence works reliably
+    // across browser + standalone PWA contexts.
+    res.cookies.set(CUSTOMER_TOKEN_COOKIE_NAME, data.generateCustomerToken.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      domain:
+        process.env.NODE_ENV === "production"
+          ? process.env.AUTH_COOKIE_DOMAIN || undefined
+          : undefined,
+      maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
+      expires: new Date(Date.now() + AUTH_COOKIE_MAX_AGE_SECONDS * 1000),
+    });
+
+    return res;
   } catch {
     return NextResponse.json({ ok: false, message: "Invalid login" }, { status: 401 });
   }
