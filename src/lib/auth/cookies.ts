@@ -17,6 +17,7 @@ function baseCookieOptions() {
     domain: COOKIE_DOMAIN,
   };
 }
+const AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 14; // 14 days
 
 export async function getCustomerToken(): Promise<string | null> {
   const store = await cookies();
@@ -28,6 +29,12 @@ export async function setCustomerToken(token: string): Promise<void> {
 
   store.set(CUSTOMER_TOKEN_COOKIE_NAME, token, {
     ...baseCookieOptions(),
+  store.set(COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    domain: COOKIE_DOMAIN,
     // Set both maxAge and absolute expires to maximize persistence across
     // browser/PWA implementations when windows are closed/reopened.
     maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
