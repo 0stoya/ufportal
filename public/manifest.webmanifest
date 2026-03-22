@@ -1,0 +1,28 @@
+{
+  "name": "Thomas Ridley Portal",
+  "short_name": "TR Portal",
+  "description": "Customer portal",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#305cde",
+  "icons": [
+    {
+      "src": "/icons/TR_Favicon_192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/TR_Favicon_512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/TR_Favicon_maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

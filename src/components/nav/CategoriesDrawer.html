@@ -1,0 +1,154 @@
+// src/components/nav/CategoriesDrawer.tsx
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { Menu, X, ChevronRight } from "lucide-react";
+import { useEffect } from "react";
+
+type NavCategory = {
+  id: number;
+  name: string;
+  url_path: string;
+  children: NavCategory[];
+};
+
+function categoryHref(url_path: string) {
+  const p = (url_path || "").replace(/^\/+|\/+$/g, "");
+  return p ? `/c/${p}` : "/c";
+}
+
+export default function CategoriesDrawer() {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [cats, setCats] = useState<NavCategory[]>([]);
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    if (!open) return;
+    if (cats.length) return;
+
+    setLoading(true);
+    fetch("/api/nav/categories")
+      .then((r) => r.json())
+      .then((json) => setCats(json?.categories ?? []))
+      .catch(() => setCats([]))
+      .finally(() => setLoading(false));
+  }, [open, cats.length]);
+
+  const top = useMemo(() => cats ?? [], [cats]);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-muted"
+        aria-label="Open categories"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      {open ? (
+        <div className="fixed inset-0 z-[60]">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            aria-label="Close categories"
+            onClick={() => setOpen(false)}
+          />
+          <div className="absolute left-0 top-0 h-full w-[86%] max-w-sm bg-background shadow-2xl">
+            <div className="flex h-14 items-center justify-between border-b border-border px-4">
+              <div className="text-sm font-semibold">Categories</div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-muted"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="h-[calc(100%-3.5rem)] overflow-y-auto p-3">
+              {loading ? (
+                <div className="p-3 text-sm text-muted-foreground">Loading…</div>
+              ) : top.length ? (
+                <div className="space-y-2">
+                  {top.map((cat) => {
+                    const hasKids = Boolean(cat.children?.length);
+                    const isOpen = Boolean(expanded[cat.id]);
+
+                    return (
+                      <div key={cat.id} className="rounded-xl border bg-card">
+                        <div className="flex items-center justify-between p-3">
+                          <Link
+                            href={categoryHref(cat.url_path)}
+                            onClick={() => setOpen(false)}
+                            className="text-sm font-semibold"
+                          >
+                            {cat.name}
+                          </Link>
+
+                          {hasKids ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpanded((m) => ({ ...m, [cat.id]: !m[cat.id] }))
+                              }
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-muted"
+                              aria-label={isOpen ? "Collapse" : "Expand"}
+                            >
+                              <ChevronRight
+                                className={`h-4 w-4 transition-transform ${
+                                  isOpen ? "rotate-90" : ""
+                                }`}
+                              />
+                            </button>
+                          ) : null}
+                        </div>
+
+                        {hasKids && isOpen ? (
+                          <div className="border-t p-3 space-y-2">
+                            {cat.children.map((lvl2) => (
+                              <div key={lvl2.id}>
+                                <Link
+                                  href={categoryHref(lvl2.url_path)}
+                                  onClick={() => setOpen(false)}
+                                  className="block text-sm font-medium hover:underline"
+                                >
+                                  {lvl2.name}
+                                </Link>
+
+                                {lvl2.children?.length ? (
+                                  <div className="mt-1 space-y-1 pl-3">
+                                    {lvl2.children.map((lvl3) => (
+                                      <Link
+                                        key={lvl3.id}
+                                        href={categoryHref(lvl3.url_path)}
+                                        onClick={() => setOpen(false)}
+                                        className="block text-sm text-muted-foreground hover:text-foreground hover:underline"
+                                      >
+                                        {lvl3.name}
+                                      </Link>
+                                    ))}
+                                  </div>
+                                ) : null}
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-3 text-sm text-muted-foreground">No categories found.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}

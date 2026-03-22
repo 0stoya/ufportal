@@ -5,23 +5,47 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p $PORT",
     "lint": "eslint"
   },
   "dependencies": {
-    "next": "16.1.1",
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "@babel/runtime": "^7.28.6",
+    "@ducanh2912/next-pwa": "^10.2.9",
+    "@types/workbox-core": "^5.0.0",
+    "@types/workbox-precaching": "^5.0.0",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.27.1",
+    "instantsearch.js": "^4.86.1",
+    "lucide-react": "^0.562.0",
+    "next": "15",
+    "next-themes": "^0.4.6",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-google-recaptcha": "^3.1.0",
+    "react-instantsearch-hooks-web": "^6.47.3",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss-animate": "^1.0.7",
+    "typesense": "^2.1.0",
+    "typesense-instantsearch-adapter": "^2.9.0",
+    "web-push": "^3.6.7",
+    "workbox-build": "^7.4.0",
+    "workbox-core": "^7.4.0",
+    "workbox-precaching": "^7.4.0",
+    "workbox-routing": "^7.4.0",
+    "workbox-strategies": "^7.4.0",
+    "zustand": "^5.0.10"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/node": "20",
+    "@types/react": "18",
+    "@types/react-dom": "18",
+    "@types/react-google-recaptcha": "^2.1.9",
+    "@types/web-push": "^3.6.4",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   }
 }
