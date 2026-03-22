@@ -2,7 +2,6 @@
 import { NextResponse } from "next/server";
 import { magentoGraphql, MagentoUnauthorizedError } from "@/lib/magento/fetchGraphql";
 import { QUERY_ME } from "@/lib/magento/queries";
-import { clearCustomerToken } from "@/lib/auth/cookies";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,7 +17,10 @@ export async function GET() {
     return NextResponse.json(data, { headers: { "Cache-Control": "no-store" } });
   } catch (e: any) {
     if (e instanceof MagentoUnauthorizedError) {
-      await clearCustomerToken();
+      // Do not clear the auth cookie here.
+      // Some browsers/PWA contexts can surface transient unauthorized responses
+      // during startup; immediately deleting a valid long-lived cookie causes users
+      // to appear logged out after closing/reopening the app.
       return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: { "Cache-Control": "no-store" } });
     }
     return NextResponse.json({ error: e?.message ?? "Error" }, { status: 500, headers: { "Cache-Control": "no-store" } });
