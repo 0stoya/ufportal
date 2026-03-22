@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
-import { magentoGraphql } from "@/lib/magento/fetchGraphql";
-import { QUERY_ME } from "@/lib/magento/queries";
+import { getCustomerToken } from "@/lib/auth/cookies";
 
 export default async function HomePage() {
-  try {
-    await magentoGraphql(QUERY_ME, {}, { requireAuth: true });
+  const token = await getCustomerToken();
+
+  if (token) {
     redirect("/dashboard");
-  } catch {
-    redirect("/login?next=/dashboard");
   }
+
+  redirect("/login?next=/dashboard");
 }
