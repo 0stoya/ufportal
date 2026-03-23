@@ -79,18 +79,18 @@ export default function OrdersPage() {
   }, []);
 
   return (
-    <main className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <main className="page-shell">
+      <header className="page-header">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Order History</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="page-title">Order History</h1>
+          <p className="page-subtitle">
             Manage and view your recent transactions ({totalCount} total).
           </p>
         </div>
       </header>
 
       {error && (
-        <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-sm text-red-800">
+        <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-sm text-destructive">
           {error}
         </div>
       )}

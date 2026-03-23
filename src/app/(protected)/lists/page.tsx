@@ -225,7 +225,7 @@ export default function ListsPage() {
   }
 
   return (
-    <main className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8 relative">
+    <main className="page-shell relative">
       
       {/* Rename Modal */}
       <RenameDialog 
@@ -237,21 +237,21 @@ export default function ListsPage() {
       />
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 border-b border-slate-100 pb-6">
+      <div className="mb-8 flex flex-col justify-between gap-4 border-b border-border pb-6 sm:flex-row sm:items-end">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Shopping Lists</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="page-title">Shopping Lists</h1>
+          <p className="page-subtitle">
             Manage lists for quick reordering.
           </p>
         </div>
-        <div className="text-sm font-medium text-slate-500 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
+        <div className="rounded-full border border-border bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
             {items.length} Lists
         </div>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-sm text-red-800 flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
+        <div className="mb-6 flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          <div className="h-1.5 w-1.5 rounded-full bg-destructive" />
           {error}
         </div>
       )}
