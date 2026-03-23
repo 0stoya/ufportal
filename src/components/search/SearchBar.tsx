@@ -43,6 +43,16 @@ type HitDoc = {
   };
 };
 
+type SearchApiItem = {
+  sku?: string;
+  id?: number | string;
+  small_image?: string | null;
+};
+
+type SearchApiResponse = {
+  items?: SearchApiItem[];
+};
+
 // --------------------
 // Constants
 // --------------------
@@ -94,6 +104,17 @@ function extractImageUrl(hit: Partial<HitDoc>): string {
       hit.image_url ??
       hit.document?.image_url
   );
+}
+
+function buildImageMap(items: SearchApiItem[] = []): Record<string, string> {
+  const imageBySku: Record<string, string> = {};
+  for (const item of items) {
+    const sku = normStr(item.sku ?? item.id ?? "").toUpperCase();
+    const image = normStr(item.small_image);
+    if (!sku || !image) continue;
+    imageBySku[sku] = image;
+  }
+  return imageBySku;
 }
 
 // --------------------
