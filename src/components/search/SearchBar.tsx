@@ -30,8 +30,24 @@ type HitDoc = {
   id?: string;
   sku?: string;
   name?: string;
-  small_image?: string | null;
+  small_image?: string | { url?: string | null } | null;
+  "small_image.url"?: string | null;
+  image?: string | null;
+  image_url?: string | null;
   brand?: string | null;
+  document?: {
+    small_image?: string | { url?: string | null } | null;
+    "small_image.url"?: string | null;
+    image?: string | null;
+    image_url?: string | null;
+  };
+};
+
+type SearchApiResponse = {
+  items?: Array<{
+    sku?: string;
+    small_image?: string | null;
+  }>;
 };
 
 // --------------------
@@ -59,6 +75,45 @@ function getHref(hit: Partial<HitDoc>): string | null {
   return `/product/${encodeURIComponent(sku)}`;
 }
 
+function buildImageMap(items: SearchApiResponse["items"]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const item of items || []) {
+    const sku = normStr(item?.sku).toUpperCase();
+    const image = normStr(item?.small_image);
+    if (!sku || !image) continue;
+    out[sku] = image;
+  }
+  return out;
+}
+
+function extractImageUrl(hit: Partial<HitDoc>): string {
+  const smallImage = hit.small_image;
+  if (typeof smallImage === "string" && smallImage.trim()) return smallImage.trim();
+  if (smallImage && typeof smallImage === "object" && typeof smallImage.url === "string" && smallImage.url.trim()) {
+    return smallImage.url.trim();
+  }
+
+  const nestedSmallImage = hit.document?.small_image;
+  if (typeof nestedSmallImage === "string" && nestedSmallImage.trim()) return nestedSmallImage.trim();
+  if (
+    nestedSmallImage &&
+    typeof nestedSmallImage === "object" &&
+    typeof nestedSmallImage.url === "string" &&
+    nestedSmallImage.url.trim()
+  ) {
+    return nestedSmallImage.url.trim();
+  }
+
+  return normStr(
+    hit["small_image.url"] ??
+      hit.document?.["small_image.url"] ??
+      hit.image ??
+      hit.document?.image ??
+      hit.image_url ??
+      hit.document?.image_url
+  );
+}
+
 // --------------------
 // UI Sub-Components
 // --------------------
@@ -67,7 +122,7 @@ function SuggestionRow({ hit, active, onPick }: { hit: HitDoc; active: boolean; 
   const name = hit.name || "Unknown Product";
   const sku = getSku(hit);
   const brand = hit.brand ? normStr(hit.brand) : null;
-  const img = normStr(hit.small_image);
+  const img = extractImageUrl(hit);
 
   return (
     <button
@@ -103,8 +158,41 @@ function SuggestionRow({ hit, active, onPick }: { hit: HitDoc; active: boolean; 
 
 function Suggestions({ query, activeIndex, onPickHref, onPickAll }: any) {
   const { hits } = useHits<HitDoc>();
+  const [hydratedImageBySku, setHydratedImageBySku] = useState<Record<string, string>>({});
   // We use hitsPerPage in Configure, but slice here just to be safe visually
   const items = useMemo(() => hits.slice(0, MAX_SUGGESTIONS), [hits]);
+  const upperQuery = query.trim().toUpperCase();
+
+  useEffect(() => {
+    const abort = new AbortController();
+    const skusNeedingImages = items
+      .filter((hit) => !extractImageUrl(hit))
+      .map((hit) => getSku(hit))
+      .filter(Boolean);
+
+    if (!upperQuery || skusNeedingImages.length === 0) {
+      setHydratedImageBySku({});
+      return () => abort.abort();
+    }
+
+    const run = async () => {
+      try {
+        const res = await fetch(
+          `/api/products/search?q=${encodeURIComponent(query)}&page=1&pageSize=${MAX_SUGGESTIONS}`,
+          { signal: abort.signal, cache: "no-store" }
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as SearchApiResponse;
+        if (abort.signal.aborted) return;
+        setHydratedImageBySku(buildImageMap(data.items));
+      } catch {
+        if (!abort.signal.aborted) setHydratedImageBySku({});
+      }
+    };
+
+    run();
+    return () => abort.abort();
+  }, [items, query, upperQuery]);
 
   // If InstantSearch is active but returns 0 hits
   if (items.length === 0) {
@@ -122,10 +210,15 @@ function Suggestions({ query, activeIndex, onPickHref, onPickAll }: any) {
           const href = getHref(hit);
           if (!href) return null;
           const key = hit.objectID || hit.sku || idx;
+          const sku = getSku(hit).toUpperCase();
+          const fallbackImage = hydratedImageBySku[sku];
+          const normalizedHit: HitDoc = fallbackImage && !extractImageUrl(hit)
+            ? { ...hit, small_image: fallbackImage }
+            : hit;
           return (
             <li key={key}>
               <SuggestionRow
-                hit={hit}
+                hit={normalizedHit}
                 active={idx === activeIndex}
                 onPick={() => onPickHref(href)}
               />
