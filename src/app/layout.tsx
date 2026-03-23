@@ -4,7 +4,10 @@ export const metadata = {
   title: "Thomas Riddle Portal",
   description: "Customer portal",
   manifest: "/manifest.webmanifest",
-  themeColor: "#305cde"
+};
+
+export const viewport = {
+  themeColor: "#305cde",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
