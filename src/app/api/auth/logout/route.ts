@@ -4,9 +4,9 @@ import { CUSTOMER_TOKEN_COOKIE_NAME } from "@/lib/auth/cookies";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST() {
-  // Return JSON and clear extra cookies
-  const res = NextResponse.json({ ok: true });
+export async function POST(request: Request) {
+  const redirectUrl = new URL("/login", request.url);
+  const res = NextResponse.redirect(redirectUrl, { status: 303 });
 
   res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.headers.set("Pragma", "no-cache");
