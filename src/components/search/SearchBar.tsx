@@ -30,8 +30,17 @@ type HitDoc = {
   id?: string;
   sku?: string;
   name?: string;
-  small_image?: string | null;
+  small_image?: string | { url?: string | null } | null;
+  "small_image.url"?: string | null;
+  image?: string | null;
+  image_url?: string | null;
   brand?: string | null;
+  document?: {
+    small_image?: string | { url?: string | null } | null;
+    "small_image.url"?: string | null;
+    image?: string | null;
+    image_url?: string | null;
+  };
 };
 
 // --------------------
@@ -59,6 +68,34 @@ function getHref(hit: Partial<HitDoc>): string | null {
   return `/product/${encodeURIComponent(sku)}`;
 }
 
+function extractImageUrl(hit: Partial<HitDoc>): string {
+  const smallImage = hit.small_image;
+  if (typeof smallImage === "string" && smallImage.trim()) return smallImage.trim();
+  if (smallImage && typeof smallImage === "object" && typeof smallImage.url === "string" && smallImage.url.trim()) {
+    return smallImage.url.trim();
+  }
+
+  const nestedSmallImage = hit.document?.small_image;
+  if (typeof nestedSmallImage === "string" && nestedSmallImage.trim()) return nestedSmallImage.trim();
+  if (
+    nestedSmallImage &&
+    typeof nestedSmallImage === "object" &&
+    typeof nestedSmallImage.url === "string" &&
+    nestedSmallImage.url.trim()
+  ) {
+    return nestedSmallImage.url.trim();
+  }
+
+  return normStr(
+    hit["small_image.url"] ??
+      hit.document?.["small_image.url"] ??
+      hit.image ??
+      hit.document?.image ??
+      hit.image_url ??
+      hit.document?.image_url
+  );
+}
+
 // --------------------
 // UI Sub-Components
 // --------------------
@@ -67,7 +104,7 @@ function SuggestionRow({ hit, active, onPick }: { hit: HitDoc; active: boolean; 
   const name = hit.name || "Unknown Product";
   const sku = getSku(hit);
   const brand = hit.brand ? normStr(hit.brand) : null;
-  const img = normStr(hit.small_image);
+  const img = extractImageUrl(hit);
 
   return (
     <button
