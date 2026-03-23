@@ -140,8 +140,41 @@ function SuggestionRow({ hit, active, onPick }: { hit: HitDoc; active: boolean; 
 
 function Suggestions({ query, activeIndex, onPickHref, onPickAll }: any) {
   const { hits } = useHits<HitDoc>();
+  const [hydratedImageBySku, setHydratedImageBySku] = useState<Record<string, string>>({});
   // We use hitsPerPage in Configure, but slice here just to be safe visually
   const items = useMemo(() => hits.slice(0, MAX_SUGGESTIONS), [hits]);
+  const upperQuery = query.trim().toUpperCase();
+
+  useEffect(() => {
+    const abort = new AbortController();
+    const skusNeedingImages = items
+      .filter((hit) => !extractImageUrl(hit))
+      .map((hit) => getSku(hit))
+      .filter(Boolean);
+
+    if (!upperQuery || skusNeedingImages.length === 0) {
+      setHydratedImageBySku({});
+      return () => abort.abort();
+    }
+
+    const run = async () => {
+      try {
+        const res = await fetch(
+          `/api/products/search?q=${encodeURIComponent(query)}&page=1&pageSize=${MAX_SUGGESTIONS}`,
+          { signal: abort.signal, cache: "no-store" }
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as SearchApiResponse;
+        if (abort.signal.aborted) return;
+        setHydratedImageBySku(buildImageMap(data.items));
+      } catch {
+        if (!abort.signal.aborted) setHydratedImageBySku({});
+      }
+    };
+
+    run();
+    return () => abort.abort();
+  }, [items, query, upperQuery]);
 
   // If InstantSearch is active but returns 0 hits
   if (items.length === 0) {
@@ -159,10 +192,15 @@ function Suggestions({ query, activeIndex, onPickHref, onPickAll }: any) {
           const href = getHref(hit);
           if (!href) return null;
           const key = hit.objectID || hit.sku || idx;
+          const sku = getSku(hit).toUpperCase();
+          const fallbackImage = hydratedImageBySku[sku];
+          const normalizedHit: HitDoc = fallbackImage && !extractImageUrl(hit)
+            ? { ...hit, small_image: fallbackImage }
+            : hit;
           return (
             <li key={key}>
               <SuggestionRow
-                hit={hit}
+                hit={normalizedHit}
                 active={idx === activeIndex}
                 onPick={() => onPickHref(href)}
               />
