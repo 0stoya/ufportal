@@ -10,17 +10,18 @@ type RespCustomer = { customer: { firstname: string; lastname: string; email: st
 type RespCart = { customerCart: { id: string; total_quantity: number } };
 
 export default async function Page() {
-  const customerData = await magentoGraphql<RespCustomer>(
-    QUERY_DASHBOARD_CUSTOMER,
-    {},
-    { requireAuth: true }
-  );
-
-  const cartData = await magentoGraphql<RespCart>(
-    QUERY_DASHBOARD_CART,
-    {},
-    { requireAuth: true }
-  ).catch(() => null);
+  const [customerData, cartData] = await Promise.all([
+    magentoGraphql<RespCustomer>(
+      QUERY_DASHBOARD_CUSTOMER,
+      {},
+      { requireAuth: true }
+    ),
+    magentoGraphql<RespCart>(
+      QUERY_DASHBOARD_CART,
+      {},
+      { requireAuth: true }
+    ).catch(() => null),
+  ]);
 
   return (
     <DashboardPage

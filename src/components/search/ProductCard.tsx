@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { memo } from "react";
 import { PackageOpen, Tag, CalendarDays, Loader2, ShoppingCart } from "lucide-react";
 import { formatMoney } from "@/lib/utils";
 import { normalizeBbeYmd, daysUntilYmd, bbeText, bbeTone } from "@/lib/search/utils";
@@ -14,7 +15,7 @@ interface ProductCardProps {
   onAdd: (sku: string) => void;
 }
 
-export function ProductCard({ product: p, isRestricted, isAdding, onAdd }: ProductCardProps) {
+function ProductCardImpl({ product: p, isRestricted, isAdding, onAdd }: ProductCardProps) {
   // Price Logic
   const price = p.resolved_price?.custom ?? p.resolved_price?.standard ?? null;
   const currency = price?.currency ?? "GBP";
@@ -149,3 +150,5 @@ export function ProductCard({ product: p, isRestricted, isAdding, onAdd }: Produ
     </div>
   );
 }
+
+export const ProductCard = memo(ProductCardImpl);

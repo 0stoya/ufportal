@@ -7,6 +7,22 @@
       linear-gradient(to bottom, var(--border) 1px, transparent 1px);
     mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
   }
+
+  .page-shell {
+    @apply w-full max-w-full px-4 py-8 sm:px-6 lg:px-8;
+  }
+
+  .page-header {
+    @apply mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold tracking-tight text-foreground;
+  }
+
+  .page-subtitle {
+    @apply mt-1 text-sm text-muted-foreground;
+  }
 }
 /* --- 1. Define Variables --- */
 :root {

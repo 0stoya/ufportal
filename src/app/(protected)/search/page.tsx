@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useBootstrap } from "@/components/bootstrap/BootstrapProvider";
 import { useToast } from "@/components/ui/toast";
 import { useCartStore } from "@/lib/cart/cartStore";
@@ -26,7 +26,7 @@ export default function SearchPage() {
 
   const [addingSku, setAddingSku] = useState<string | null>(null);
 
-  async function addToCart(sku: string) {
+  const addToCart = useCallback(async (sku: string) => {
     const normalized = sku.trim().toUpperCase();
 
     if (restrictedSkuSet.has(normalized)) {
@@ -51,24 +51,24 @@ export default function SearchPage() {
     } finally {
       setAddingSku(null);
     }
-  }
+  }, [refreshNavCart, restrictedSkuSet, show]);
 
   const modeLabel = !canSearch ? null : data.mode === "strict" ? "Best matches" : "Broader matches";
 
   return (
-    <main className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
+    <main className="page-shell">
       {/* Header */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <header className="page-header">
         <div className="flex items-center gap-2">
-          <Link href="/orders" className="p-2 -ml-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg">
+          <Link href="/orders" className="p-2 -ml-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg">
             <ChevronLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Product Search</h1>
-            <p className="text-sm text-slate-500 mt-1">
+            <h1 className="page-title">Product Search</h1>
+            <p className="page-subtitle">
               {canSearch ? `${data.total_count} results • ${pageSize} per page` : "Find products by name or SKU."}
               {modeLabel && (
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-slate-200 bg-white text-slate-600">
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-border bg-card text-muted-foreground">
                   {modeLabel}
                 </span>
               )}
@@ -86,10 +86,10 @@ export default function SearchPage() {
 
       {/* Error State */}
       {error && (
-        <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-sm text-red-800 flex items-center gap-2">
-          <AlertCircle className="w-5 h-5 text-red-600" />
-          {error}
-        </div>
+          <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-sm text-destructive flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-red-600" />
+            {error}
+          </div>
       )}
 
       {/* Content Area */}
@@ -98,17 +98,17 @@ export default function SearchPage() {
         {/* Empty States */}
         {!loading && !canSearch && data.items.length === 0 && (
           <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
-              <Search className="h-8 w-8 text-slate-400" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+              <Search className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-slate-900">Ready to search</h3>
-            <p className="text-slate-500 mt-1">Enter at least 2 characters to begin.</p>
+            <h3 className="text-lg font-medium text-foreground">Ready to search</h3>
+            <p className="text-muted-foreground mt-1">Enter at least 2 characters to begin.</p>
           </div>
         )}
 
         {!loading && canSearch && data.items.length === 0 && (
-          <div className="text-center py-12 bg-slate-50 rounded-xl border border-slate-200 border-dashed">
-            <p className="text-slate-500">No products found for &quot;<span className="font-medium text-slate-900">{q}</span>&quot;.</p>
+          <div className="text-center py-12 bg-muted rounded-xl border border-border border-dashed">
+            <p className="text-muted-foreground">No products found for &quot;<span className="font-medium text-foreground">{q}</span>&quot;.</p>
           </div>
         )}
 
