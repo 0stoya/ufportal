@@ -5,6 +5,9 @@ const withPWA = require("@ducanh2912/next-pwa").default({
   swSrc: "src/sw/worker.ts",
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,
+  // Keep Workbox rules explicit. The default generic /api cache rule can cache
+  // unauthorized responses and replay them after login.
+  extendDefaultRuntimeCaching: false,
   reloadOnOnline: true,
   disable: process.env.NODE_ENV === "development",
   fallbacks: { document: "/offline.html" },
@@ -37,8 +40,11 @@ const withPWA = require("@ducanh2912/next-pwa").default({
       },
     },
 
-    // 3) NEVER Cache Cart/Checkout/Auth/Profile
-    { urlPattern: /\/api\/(auth|cart|checkout|orders|me|profile).*/i, handler: "NetworkOnly" },
+    // 3) NEVER Cache Authenticated session endpoints
+    {
+      urlPattern: /\/api\/(auth|bootstrap|cart|checkout|orders|me|profile).*/i,
+      handler: "NetworkOnly",
+    },
 
     // 4) Vendor Probe
     {
