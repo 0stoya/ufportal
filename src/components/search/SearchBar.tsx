@@ -43,13 +43,6 @@ type HitDoc = {
   };
 };
 
-type SearchApiResponse = {
-  items?: Array<{
-    sku?: string;
-    small_image?: string | null;
-  }>;
-};
-
 // --------------------
 // Constants
 // --------------------
@@ -73,17 +66,6 @@ function getHref(hit: Partial<HitDoc>): string | null {
   const sku = getSku(hit);
   if (!sku) return null;
   return `/product/${encodeURIComponent(sku)}`;
-}
-
-function buildImageMap(items: SearchApiResponse["items"]): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const item of items || []) {
-    const sku = normStr(item?.sku).toUpperCase();
-    const image = normStr(item?.small_image);
-    if (!sku || !image) continue;
-    out[sku] = image;
-  }
-  return out;
 }
 
 function extractImageUrl(hit: Partial<HitDoc>): string {
