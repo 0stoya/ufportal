@@ -1,6 +1,7 @@
 import DashboardPage from "@/components/home/DashboardPage";
-import { magentoGraphql } from "@/lib/magento/fetchGraphql";
+import { magentoGraphql, MagentoUnauthorizedError } from "@/lib/magento/fetchGraphql";
 import { QUERY_DASHBOARD_CUSTOMER, QUERY_DASHBOARD_CART } from "@/lib/magento/queries";
+import { redirect } from "next/navigation";
 
 
 export const runtime = "nodejs";
@@ -10,18 +11,20 @@ type RespCustomer = { customer: { firstname: string; lastname: string; email: st
 type RespCart = { customerCart: { id: string; total_quantity: number } };
 
 export default async function Page() {
-  const [customerData, cartData] = await Promise.all([
-    magentoGraphql<RespCustomer>(
-      QUERY_DASHBOARD_CUSTOMER,
-      {},
-      { requireAuth: true }
-    ),
-    magentoGraphql<RespCart>(
-      QUERY_DASHBOARD_CART,
-      {},
-      { requireAuth: true }
-    ).catch(() => null),
-  ]);
+  let customerData: RespCustomer;
+
+  try {
+    customerData = await magentoGraphql<RespCustomer>(QUERY_DASHBOARD_CUSTOMER, {}, { requireAuth: true });
+  } catch (e: unknown) {
+    if (e instanceof MagentoUnauthorizedError) {
+      redirect("/login?next=%2Fdashboard");
+    }
+    throw e;
+  }
+
+  const cartData = await magentoGraphql<RespCart>(QUERY_DASHBOARD_CART, {}, { requireAuth: true }).catch(
+    () => null
+  );
 
   return (
     <DashboardPage

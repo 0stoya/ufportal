@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { magentoGraphql } from "@/lib/magento/fetchGraphql";
+import { MagentoGraphqlError, magentoGraphql } from "@/lib/magento/fetchGraphql";
 import CategoryFiltersBar from "@/components/category/CategoryFiltersBar";
 
 export const runtime = "nodejs";
@@ -112,6 +112,13 @@ function buildQueryString(base: Record<string, string | undefined>) {
   return s ? `?${s}` : "";
 }
 
+function isUnsupportedStockStatusFilterError(e: unknown) {
+  if (!(e instanceof MagentoGraphqlError)) return false;
+  return e.errors.some((err) =>
+    err.message.includes('Field "stock_status" is not defined by type "ProductAttributeFilterInput"')
+  );
+}
+
 export default async function CategoryPage({
   params,
   searchParams,
@@ -165,7 +172,7 @@ export default async function CategoryPage({
 
   if (inStock) {
     // Magento supports stock_status filter in many setups. If yours doesn’t,
-    // we’ll swap to a custom attribute/resolver later.
+    // we transparently retry without it below.
     filter.stock_status = { eq: "IN_STOCK" };
   }
 
@@ -176,16 +183,37 @@ export default async function CategoryPage({
         ? { name: "DESC" }
         : undefined;
 
-  const prodData = await magentoGraphql<ProductsResp>(
-    QUERY_PRODUCTS_BY_CATEGORY_ID,
-    {
-      filter,
-      pageSize,
-      currentPage: page,
-      sort: sortInput,
-    },
-    { cache: "force-cache", next: { revalidate: 300, tags: [`cat:${category.id}`] } }
-  );
+  let prodData: ProductsResp;
+  try {
+    prodData = await magentoGraphql<ProductsResp>(
+      QUERY_PRODUCTS_BY_CATEGORY_ID,
+      {
+        filter,
+        pageSize,
+        currentPage: page,
+        sort: sortInput,
+      },
+      { cache: "force-cache", next: { revalidate: 300, tags: [`cat:${category.id}`] } }
+    );
+  } catch (e: unknown) {
+    if (inStock && isUnsupportedStockStatusFilterError(e)) {
+      const fallbackFilter = { ...filter };
+      delete fallbackFilter.stock_status;
+
+      prodData = await magentoGraphql<ProductsResp>(
+        QUERY_PRODUCTS_BY_CATEGORY_ID,
+        {
+          filter: fallbackFilter,
+          pageSize,
+          currentPage: page,
+          sort: sortInput,
+        },
+        { cache: "force-cache", next: { revalidate: 300, tags: [`cat:${category.id}`] } }
+      );
+    } else {
+      throw e;
+    }
+  }
 
   const { items, total_count, page_info } = prodData.products;
 
