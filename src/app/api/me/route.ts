@@ -5,6 +5,7 @@ import { QUERY_ME } from "@/lib/magento/queries";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
 
 export async function GET() {
   type Resp = {
@@ -14,15 +15,16 @@ export async function GET() {
 
   try {
     const data = await magentoGraphql<Resp>(QUERY_ME, {}, { requireAuth: true });
-    return NextResponse.json(data, { headers: { "Cache-Control": "no-store" } });
-  } catch (e: any) {
+    return NextResponse.json(data, { headers: NO_STORE_HEADERS });
+  } catch (e: unknown) {
     if (e instanceof MagentoUnauthorizedError) {
       // Do not clear the auth cookie here.
       // Some browsers/PWA contexts can surface transient unauthorized responses
       // during startup; immediately deleting a valid long-lived cookie causes users
       // to appear logged out after closing/reopening the app.
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: { "Cache-Control": "no-store" } });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE_HEADERS });
     }
-    return NextResponse.json({ error: e?.message ?? "Error" }, { status: 500, headers: { "Cache-Control": "no-store" } });
+    const message = e instanceof Error ? e.message : "Internal server error";
+    return NextResponse.json({ error: message }, { status: 500, headers: NO_STORE_HEADERS });
   }
 }

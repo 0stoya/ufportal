@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { fetchJson, UnauthorizedError } from "@/lib/api/fetchJson";
 
@@ -39,6 +39,7 @@ export function BootstrapProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const [bootstrap, setBootstrap] = useState<Bootstrap | null>(null);
+  const redirectingRef = useRef(false);
 
   const load = async () => {
     setLoading(true);
@@ -49,6 +50,8 @@ export function BootstrapProvider({ children }: { children: React.ReactNode }) {
       setBootstrap(null);
 
       if (error instanceof UnauthorizedError) {
+        if (redirectingRef.current) return;
+        redirectingRef.current = true;
         const next = encodeURIComponent(pathname || "/");
         router.replace(`/login?next=${next}`);
       }
