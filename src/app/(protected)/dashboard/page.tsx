@@ -11,6 +11,8 @@ type RespCustomer = { customer: { firstname: string; lastname: string; email: st
 type RespCart = { customerCart: { id: string; total_quantity: number } };
 
 export default async function Page() {
+  const cartPromise = magentoGraphql<RespCart>(QUERY_DASHBOARD_CART, {}, { requireAuth: true }).catch(() => null);
+
   let customerData: RespCustomer;
 
   try {
@@ -22,9 +24,7 @@ export default async function Page() {
     throw e;
   }
 
-  const cartData = await magentoGraphql<RespCart>(QUERY_DASHBOARD_CART, {}, { requireAuth: true }).catch(
-    () => null
-  );
+  const cartData = await cartPromise;
 
   return (
     <DashboardPage
