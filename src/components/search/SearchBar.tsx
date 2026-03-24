@@ -7,13 +7,11 @@ import {
   InstantSearch,
   useHits,
   useSearchBox,
-  UseHitsProps,
-  UseConfigureProps
 } from "react-instantsearch-hooks-web";
 import { Loader2, Search, Package, ArrowRight, X } from "lucide-react";
 import { searchClient } from "@/lib/typesense/instantsearchClient";
 // ✅ CRITICAL FIX 1: Import collection AND config from the correct file
-import { TYPESENSE_COLLECTION, SEARCH_CONFIG } from "@/lib/typesense/config"; 
+import { TYPESENSE_COLLECTION, SEARCH_CONFIG } from "@/lib/typesense/config";
 
 // --------------------
 // Types
@@ -386,6 +384,38 @@ className="block w-full rounded-xl border-slate-200 bg-white pl-10 pr-10 py-3 te
 // --------------------
 
 export function SearchBar(props: Props) {
+  const router = useRouter();
+
+  if (!searchClient) {
+    return (
+      <div className="w-full mb-8">
+        <div className="relative w-full max-w-2xl mx-auto z-50">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-slate-400" />
+          </div>
+          <input
+            type="text"
+            value={props.value}
+            onChange={(e) => props.onChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                const trimmed = props.value.trim();
+                if (!trimmed) return;
+                router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+              }
+            }}
+            placeholder="Search by name, SKU, or brand..."
+            className="block w-full rounded-xl border-slate-200 bg-white pl-10 pr-10 py-3 text-base sm:text-sm text-slate-900"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck="false"
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full mb-8">
       <InstantSearch searchClient={searchClient} indexName={TYPESENSE_COLLECTION}>

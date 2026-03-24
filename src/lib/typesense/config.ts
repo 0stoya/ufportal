@@ -8,6 +8,7 @@ export const TYPESENSE_PROTOCOL = process.env.NEXT_PUBLIC_TYPESENSE_PROTOCOL || 
 export const TYPESENSE_PORT = Number(process.env.NEXT_PUBLIC_TYPESENSE_PORT || "443");
 export const TYPESENSE_PATH = process.env.NEXT_PUBLIC_TYPESENSE_PATH || "/typesense";
 export const TYPESENSE_API_KEY = process.env.NEXT_PUBLIC_TYPESENSE_SEARCH_KEY!;
+export const HAS_TYPESENSE_CLIENT_CONFIG = Boolean(TYPESENSE_HOST && TYPESENSE_API_KEY);
 
 /**
  * Shared Search Parameters

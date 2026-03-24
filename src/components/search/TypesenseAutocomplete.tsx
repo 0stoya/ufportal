@@ -7,7 +7,6 @@ import {
   Configure,
   useHits,
   useSearchBox,
-  UseHitsProps
 } from "react-instantsearch-hooks-web";
 import { searchClient } from "@/lib/typesense/instantsearchClient";
 import { TYPESENSE_COLLECTION } from "@/lib/typesense/config";
@@ -100,6 +99,10 @@ function SearchInput({ placeholder = "Search products…" }: { placeholder?: str
 }
 
 export default function TypesenseAutocomplete() {
+  if (!searchClient) {
+    return <SearchInput />;
+  }
+
   return (
     <InstantSearch searchClient={searchClient} indexName={TYPESENSE_COLLECTION}>
       {/* Kept 'as any' to be safe since it worked for you before */}
