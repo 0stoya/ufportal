@@ -92,6 +92,41 @@ function DashboardCard({
 }
 
 // --- Page ---
+const IMAGE_CACHE_WARMED_KEY = "product-image-cache-warmed-on";
+
+async function warmProductImageCache() {
+  if (typeof window === "undefined") return;
+
+  try {
+    const warmedOn = localStorage.getItem(IMAGE_CACHE_WARMED_KEY);
+    const today = new Date().toISOString().slice(0, 10);
+    if (warmedOn === today) return;
+
+    const res = await fetch("/api/products/images?pageSize=100&maxPages=10", { cache: "no-store" });
+    if (!res.ok) return;
+
+    const payload = (await res.json()) as { urls?: string[] };
+    const urls = (payload.urls ?? []).slice(0, 500);
+
+    const concurrency = 6;
+    for (let i = 0; i < urls.length; i += concurrency) {
+      const batch = urls.slice(i, i + concurrency);
+      await Promise.all(
+        batch.map(async (url) => {
+          try {
+            await fetch(url, { cache: "force-cache", mode: "no-cors" });
+          } catch {
+            // Ignore image warm failures; runtime cache will fill naturally as user browses.
+          }
+        })
+      );
+    }
+
+    localStorage.setItem(IMAGE_CACHE_WARMED_KEY, today);
+  } catch {
+    // Ignore warm-up failures.
+  }
+}
 
 export default function DashboardPage({ customer, customerCart, cartWarning }: Props) {
   const router = useRouter();
@@ -127,6 +162,7 @@ export default function DashboardPage({ customer, customerCart, cartWarning }: P
 
   useEffect(() => {
     loadOrders();
+    void warmProductImageCache();
   }, []);
 
   async function onLogout() {
