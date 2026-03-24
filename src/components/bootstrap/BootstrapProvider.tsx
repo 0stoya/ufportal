@@ -1,6 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { fetchJson, UnauthorizedError } from "@/lib/api/fetchJson";
 
 type Restrictions = {
   accord_code: string | null;
@@ -29,38 +31,35 @@ export function useBootstrap() {
 }
 
 async function fetchBootstrap(): Promise<Bootstrap> {
-  const res = await fetch("/api/bootstrap", { cache: "no-store" });
-  const json = (await res.json().catch(() => null)) as unknown;
-
-  if (!res.ok) {
-    const msg =
-      typeof json === "object" && json && "error" in json && typeof (json as { error?: unknown }).error === "string"
-        ? (json as { error: string }).error
-        : `Bootstrap failed (${res.status})`;
-    throw new Error(msg);
-  }
-
-  return json as Bootstrap;
+  return fetchJson<Bootstrap>("/api/bootstrap");
 }
 
 export function BootstrapProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const [bootstrap, setBootstrap] = useState<Bootstrap | null>(null);
 
-  async function load() {
+  const load = async () => {
     setLoading(true);
     try {
       const data = await fetchBootstrap();
       setBootstrap(data);
-    } catch {
+    } catch (error) {
       setBootstrap(null);
+
+      if (error instanceof UnauthorizedError) {
+        const next = encodeURIComponent(pathname || "/");
+        router.replace(`/login?next=${next}`);
+      }
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const restrictedSkuSet = useMemo(() => {
@@ -74,6 +73,10 @@ export function BootstrapProvider({ children }: { children: React.ReactNode }) {
     restrictedSkuSet,
     refresh: load,
   };
+
+  if (loading || !bootstrap) {
+    return null;
+  }
 
   return <BootstrapContext.Provider value={value}>{children}</BootstrapContext.Provider>;
 }

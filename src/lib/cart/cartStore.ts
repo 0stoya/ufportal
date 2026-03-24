@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { fetchJson, UnauthorizedError } from "@/lib/api/fetchJson";
 
 export type CartSummary = {
   id: string | null;
@@ -15,23 +16,30 @@ type CartState = {
   refresh: () => Promise<void>;
 };
 
+type CartSummaryResponse = {
+  id: string | null;
+  total_quantity: number;
+};
+
+function redirectToLogin() {
+  if (typeof window === "undefined") return;
+  const next = encodeURIComponent(`${window.location.pathname}${window.location.search}` || "/");
+  window.location.replace(`/login?next=${next}`);
+}
+
 export const useCartStore = create<CartState>((set, get) => ({
   summary: { id: null, total_quantity: 0 },
   isRefreshing: false,
   lastRefreshedAt: 0,
 
-  setSummary: (patch) =>
-    set((s) => ({ summary: { ...s.summary, ...patch } })),
+  setSummary: (patch) => set((s) => ({ summary: { ...s.summary, ...patch } })),
 
   refresh: async () => {
     if (get().isRefreshing) return;
     set({ isRefreshing: true });
 
     try {
-      const res = await fetch("/api/cart/summary", { cache: "no-store" });
-      const json = await res.json();
-
-      if (!res.ok || json?.error) return;
+      const json = await fetchJson<CartSummaryResponse>("/api/cart/summary");
 
       set({
         summary: {
@@ -40,6 +48,10 @@ export const useCartStore = create<CartState>((set, get) => ({
         },
         lastRefreshedAt: Date.now(),
       });
+    } catch (error) {
+      if (error instanceof UnauthorizedError) {
+        redirectToLogin();
+      }
     } finally {
       set({ isRefreshing: false });
     }
